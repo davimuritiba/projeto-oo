@@ -1,21 +1,25 @@
 package view;
 
 import controller.UserController;
+import controller.PostController;
+import controller.FriendController;
+import model.Post;
 import model.Privacy;
 import model.User;
 import java.util.List;
 import java.util.Scanner;
-import java.util.UUID;
 
 public class Menu {
     private UserController userController;
-    private UserWebView userView;
+    private PostController postController;
+    private FriendController friendController;
     private Scanner scanner;
     private User currentUser;
     
-    public Menu(UserController userController, UserWebView userView) {
+    public Menu(UserController userController, PostController postController, FriendController friendController) {
         this.userController = userController;
-        this.userView = userView;
+        this.postController = postController;
+        this.friendController = friendController;
         this.scanner = new Scanner(System.in);
         this.currentUser = null;
     }
@@ -71,9 +75,10 @@ public class Menu {
         System.out.println("3. ✏️  Editar usuário");
         System.out.println("4. 🗑️  Excluir usuário");
         System.out.println("5. 🔍 Buscar usuário");
-        System.out.println("6. 🌐 Gerar arquivos HTML");
-        System.out.println("7. ℹ️  Informações do sistema");
-        System.out.println("8. 🔓 Trocar usuário");
+        System.out.println("6. ℹ️  Informações do sistema");
+        System.out.println("7. 🔓 Trocar usuário");
+        System.out.println("8. 📰 Menu de Posts");
+        System.out.println("9. 🤝 Menu de Amizades");
         System.out.println("0. 🚪 Sair");
         
         int choice = getIntInput("Escolha uma opção: ");
@@ -95,14 +100,17 @@ public class Menu {
                 searchUser();
                 break;
             case 6:
-                generateHTML();
-                break;
-            case 7:
                 systemInfo();
                 break;
-            case 8:
+            case 7:
                 currentUser = null;
                 System.out.println("🔓 Usuário deslogado. Retornando ao menu de acesso.");
+                break;
+            case 8:
+                displayPostMenu();
+                break;
+            case 9:
+                displayFriendMenu();
                 break;
             case 0:
                 return false;
@@ -111,6 +119,288 @@ public class Menu {
         }
         
         return true;
+    }
+
+    private void displayPostMenu() {
+        boolean inPosts = true;
+        while (inPosts) {
+            System.out.println("\n📰 MENU DE POSTS:");
+            System.out.println("1. ➕ Criar post");
+            System.out.println("2. 📄 Listar meus posts");
+            System.out.println("3. 🌍 Listar todos os posts");
+            System.out.println("4. 👍 Curtir post");
+            System.out.println("5. 👎 Descurtir post");
+            System.out.println("6. ✏️ Editar post");
+            System.out.println("7. 🗑️ Excluir post");
+            System.out.println("0. ↩️ Voltar");
+
+            int choice = getIntInput("Escolha uma opção: ");
+            switch (choice) {
+                case 1:
+                    createPostFlow();
+                    break;
+                case 2:
+                    listMyPosts();
+                    break;
+                case 3:
+                    listAllPosts();
+                    break;
+                case 4:
+                    likePostFlow();
+                    break;
+                case 5:
+                    unlikePostFlow();
+                    break;
+                case 6:
+                    editPostFlow();
+                    break;
+                case 7:
+                    deletePostFlow();
+                    break;
+                case 0:
+                    inPosts = false;
+                    break;
+                default:
+                    System.out.println("❌ Opção inválida! Tente novamente.");
+            }
+        }
+    }
+
+    private void displayFriendMenu() {
+        if (ensureLoggedIn() == false) return;
+        boolean inFriends = true;
+        while (inFriends) {
+            System.out.println("\n🤝 MENU DE AMIZADES:");
+            System.out.println("1. ➕ Enviar solicitação");
+            System.out.println("2. ✅ Aceitar solicitação");
+            System.out.println("3. ❌ Recusar solicitação");
+            System.out.println("4. 👥 Listar amigos");
+            System.out.println("5. 📥 Solicitações recebidas");
+            System.out.println("6. 📤 Solicitações enviadas");
+            System.out.println("7. 🗑️ Remover amigo");
+            System.out.println("0. ↩️ Voltar");
+
+            int choice = getIntInput("Escolha uma opção: ");
+            switch (choice) {
+                case 1:
+                    sendFriendRequestFlow();
+                    break;
+                case 2:
+                    acceptFriendRequestFlow();
+                    break;
+                case 3:
+                    declineFriendRequestFlow();
+                    break;
+                case 4:
+                    listFriendsFlow();
+                    break;
+                case 5:
+                    listReceivedRequestsFlow();
+                    break;
+                case 6:
+                    listSentRequestsFlow();
+                    break;
+                case 7:
+                    removeFriendFlow();
+                    break;
+                case 0:
+                    inFriends = false;
+                    break;
+                default:
+                    System.out.println("❌ Opção inválida! Tente novamente.");
+            }
+        }
+    }
+
+    private void sendFriendRequestFlow() {
+        System.out.print("ID do usuário alvo (primeiros 8 caracteres): ");
+        String idPart = scanner.nextLine();
+        User target = findUserById(idPart);
+        if (target == null) { System.out.println("❌ Usuário não encontrado."); return; }
+        boolean ok = friendController.sendFriendRequest(currentUser.getId(), target.getId());
+        System.out.println(ok ? "📨 Solicitação enviada." : "⚠️ Não foi possível enviar a solicitação.");
+    }
+
+    private void acceptFriendRequestFlow() {
+        System.out.print("ID do solicitante (primeiros 8 caracteres): ");
+        String idPart = scanner.nextLine();
+        User requester = findUserById(idPart);
+        if (requester == null) { System.out.println("❌ Usuário não encontrado."); return; }
+        boolean ok = friendController.acceptRequest(currentUser.getId(), requester.getId());
+        System.out.println(ok ? "✅ Solicitação aceita." : "⚠️ Nenhuma solicitação pendente deste usuário.");
+    }
+
+    private void declineFriendRequestFlow() {
+        System.out.print("ID do solicitante (primeiros 8 caracteres): ");
+        String idPart = scanner.nextLine();
+        User requester = findUserById(idPart);
+        if (requester == null) { System.out.println("❌ Usuário não encontrado."); return; }
+        boolean ok = friendController.declineRequest(currentUser.getId(), requester.getId());
+        System.out.println(ok ? "❌ Solicitação recusada." : "⚠️ Nenhuma solicitação pendente deste usuário.");
+    }
+
+    private void listFriendsFlow() {
+        var ids = friendController.getFriends(currentUser.getId());
+        if (ids.isEmpty()) { System.out.println("👥 Você ainda não tem amigos."); return; }
+        System.out.println("\n👥 SEUS AMIGOS:");
+        for (User u : userController.getAllUsers()) {
+            if (ids.contains(u.getId())) {
+                System.out.println("- " + u.getName() + " (" + u.getEmail() + ")");
+            }
+        }
+    }
+
+    private void listReceivedRequestsFlow() {
+        var ids = friendController.getPendingReceived(currentUser.getId());
+        if (ids.isEmpty()) { System.out.println("📥 Nenhuma solicitação recebida."); return; }
+        System.out.println("\n📥 SOLICITAÇÕES RECEBIDAS:");
+        for (User u : userController.getAllUsers()) {
+            if (ids.contains(u.getId())) {
+                System.out.println("- " + u.getName() + " (" + u.getEmail() + ")");
+            }
+        }
+    }
+
+    private void listSentRequestsFlow() {
+        var ids = friendController.getPendingSent(currentUser.getId());
+        if (ids.isEmpty()) { System.out.println("📤 Nenhuma solicitação enviada."); return; }
+        System.out.println("\n📤 SOLICITAÇÕES ENVIADAS:");
+        for (User u : userController.getAllUsers()) {
+            if (ids.contains(u.getId())) {
+                System.out.println("- " + u.getName() + " (" + u.getEmail() + ")");
+            }
+        }
+    }
+
+    private void removeFriendFlow() {
+        System.out.print("ID do amigo (primeiros 8 caracteres): ");
+        String idPart = scanner.nextLine();
+        User friend = findUserById(idPart);
+        if (friend == null) { System.out.println("❌ Usuário não encontrado."); return; }
+        boolean ok = friendController.removeFriend(currentUser.getId(), friend.getId());
+        System.out.println(ok ? "🗑️ Amizade removida." : "⚠️ Vocês não são amigos.");
+    }
+
+    private void createPostFlow() {
+        if (ensureLoggedIn() == false) return;
+        System.out.println("\n➕ CRIAR POST");
+        System.out.print("Conteúdo: ");
+        String content = scanner.nextLine();
+        System.out.print("Tipo (TEXT/IMAGE/VIDEO): ");
+        String postType = scanner.nextLine();
+        Post post = postController.createPost(currentUser.getId(), content, postType);
+        System.out.println("✅ Post criado! ID: " + post.getId());
+    }
+
+    private void listMyPosts() {
+        if (ensureLoggedIn() == false) return;
+        System.out.println("\n📄 MEUS POSTS");
+        List<Post> posts = postController.getPostsByUser(currentUser.getId());
+        printPosts(posts);
+    }
+
+    private void listAllPosts() {
+        System.out.println("\n🌍 TODOS OS POSTS");
+        List<Post> posts = postController.getAllPosts();
+        printPosts(posts);
+    }
+
+    private void likePostFlow() {
+        if (ensureLoggedIn() == false) return;
+        System.out.print("ID do post (primeiros 8 caracteres): ");
+        String idPart = scanner.nextLine();
+        Post post = findPostByIdPrefix(idPart);
+        if (post == null) {
+            System.out.println("❌ Post não encontrado.");
+            return;
+        }
+        boolean ok = postController.likePost(post.getId(), currentUser.getId());
+        System.out.println(ok ? "👍 Like adicionado." : "⚠️ Você já curtiu este post.");
+    }
+
+    private void unlikePostFlow() {
+        if (ensureLoggedIn() == false) return;
+        System.out.print("ID do post (primeiros 8 caracteres): ");
+        String idPart = scanner.nextLine();
+        Post post = findPostByIdPrefix(idPart);
+        if (post == null) {
+            System.out.println("❌ Post não encontrado.");
+            return;
+        }
+        boolean ok = postController.unlikePost(post.getId(), currentUser.getId());
+        System.out.println(ok ? "👎 Like removido." : "⚠️ Você não tinha curtido este post.");
+    }
+
+    private void editPostFlow() {
+        if (ensureLoggedIn() == false) return;
+        System.out.print("ID do post (primeiros 8 caracteres): ");
+        String idPart = scanner.nextLine();
+        Post post = findPostByIdPrefix(idPart);
+        if (post == null) {
+            System.out.println("❌ Post não encontrado.");
+            return;
+        }
+        if (!post.getUserId().equals(currentUser.getId())) {
+            System.out.println("❌ Você só pode editar seus próprios posts.");
+            return;
+        }
+        System.out.print("Novo conteúdo: ");
+        String newContent = scanner.nextLine();
+        System.out.print("Novo tipo (TEXT/IMAGE/VIDEO): ");
+        String newType = scanner.nextLine();
+        boolean ok = postController.editPost(post.getId(), newContent, newType);
+        System.out.println(ok ? "✅ Post editado." : "❌ Erro ao editar post.");
+    }
+
+    private void deletePostFlow() {
+        if (ensureLoggedIn() == false) return;
+        System.out.print("ID do post (primeiros 8 caracteres): ");
+        String idPart = scanner.nextLine();
+        Post post = findPostByIdPrefix(idPart);
+        if (post == null) {
+            System.out.println("❌ Post não encontrado.");
+            return;
+        }
+        if (!post.getUserId().equals(currentUser.getId())) {
+            System.out.println("❌ Você só pode excluir seus próprios posts.");
+            return;
+        }
+        boolean ok = postController.deletePost(post.getId());
+        System.out.println(ok ? "✅ Post excluído." : "❌ Erro ao excluir post.");
+    }
+
+    private boolean ensureLoggedIn() {
+        if (currentUser == null) {
+            System.out.println("🔒 Você precisa estar logado para realizar esta ação.");
+            return false;
+        }
+        return true;
+    }
+
+    private Post findPostByIdPrefix(String idPrefix) {
+        List<Post> all = postController.getAllPosts();
+        for (Post p : all) {
+            if (p.getId().toString().startsWith(idPrefix)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    private void printPosts(List<Post> posts) {
+        if (posts == null || posts.isEmpty()) {
+            System.out.println("📭 Nenhum post encontrado.");
+            return;
+        }
+        System.out.println("-".repeat(80));
+        for (Post p : posts) {
+            System.out.println("ID: " + p.getId());
+            System.out.println("Autor: " + p.getUserId());
+            System.out.println("Tipo: " + p.getPostType());
+            System.out.println("Curtidas: " + p.getLikeCount());
+            System.out.println("Conteúdo: " + p.getContent());
+            System.out.println("-".repeat(80));
+        }
     }
     
     private void addSampleUsers() {
@@ -337,35 +627,7 @@ public class Menu {
         }
     }
     
-    private void generateHTML() {
-        System.out.println("\n🌐 GERAR ARQUIVOS HTML");
-        System.out.println("-" .repeat(30));
-        
-        try {
-            List<User> users = userController.getAllUsers();
-            
-            // Gerar formulário HTML
-            String formHTML = userView.generateUserForm();
-            java.nio.file.Files.write(java.nio.file.Path.of("formulario.html"), formHTML.getBytes());
-            System.out.println("✅ formulario.html gerado");
-            
-            // Gerar lista HTML
-            String listHTML = userView.generateUserList(users);
-            java.nio.file.Files.write(java.nio.file.Path.of("lista_usuarios.html"), listHTML.getBytes());
-            System.out.println("✅ lista_usuarios.html gerado");
-            
-            // Gerar mensagem de sucesso
-            String successHTML = userView.generateSuccessMessage("Usuário criado com sucesso!");
-            java.nio.file.Files.write(java.nio.file.Path.of("sucesso.html"), successHTML.getBytes());
-            System.out.println("✅ sucesso.html gerado");
-            
-            System.out.println("\n🌐 Arquivos HTML gerados com sucesso!");
-            System.out.println("📁 Abra os arquivos no seu navegador para visualizar.");
-            
-        } catch (Exception e) {
-            System.err.println("❌ Erro ao gerar arquivos HTML: " + e.getMessage());
-        }
-    }
+    
     
     private void systemInfo() {
         System.out.println("\nℹ️  INFORMAÇÕES DO SISTEMA");

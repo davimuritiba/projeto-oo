@@ -1,20 +1,27 @@
-import model.Privacy;
-import model.User;
 import controller.UserController;
-import view.UserWebView;
+import controller.PostController;
+import controller.FriendController;
 import view.Menu;
-import java.util.List;
+import view.SocialAppSwing;
+import javax.swing.SwingUtilities;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("🚀 Iniciando Sistema de Gerenciamento de Usuários...\n");
+        System.out.println("🚀 Iniciando Sistema de Rede Social...\n");
         
-        // Criar instâncias
-        UserController userController = new UserController();
-        UserWebView userView = new UserWebView();
-        Menu menu = new Menu(userController, userView);
-        
-        // Iniciar o menu interativo
-        menu.start();
+        // Verificar se quer usar interface gráfica ou console
+        if (args.length > 0 && args[0].equals("--console")) {
+            // Modo console
+            UserController userController = new UserController();
+            PostController postController = new PostController();
+            FriendController friendController = new FriendController();
+            Menu menu = new Menu(userController, postController, friendController);
+            menu.start();
+        } else {
+            // Modo interface gráfica (padrão)
+            SwingUtilities.invokeLater(() -> {
+                new SocialAppSwing();
+            });
+        }
     }
 }
