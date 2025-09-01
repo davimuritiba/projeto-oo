@@ -1,6 +1,13 @@
-# Sistema de Gerenciamento de Usuários - Menu Interativo
+# Projeto OO - Sistema de Rede Social
 
-Este projeto implementa um sistema de gerenciamento de usuários usando o padrão MVC (Model-View-Controller) com um menu interativo no console.
+Classes pensadas inicialmente para o projeto OO - Rede social:
+- Classe User e seus serviços
+- Classe Post e seus serviços
+- Classe Mensagem e seus serviços
+- Classe Pedido de Amizade e seus serviços
+- Classe Grupo e seus serviços
+- Classe Evento e seus serviços
+- Classe Notificação e seus serviços
 
 ## 🏗️ Estrutura do Projeto
 
@@ -9,14 +16,18 @@ projeto-oo/
 ├── src/
 │   ├── Main.java              # Classe principal
 │   ├── controller/
-│   │   └── UserController.java # Controlador de usuários
+│   │   ├── UserController.java # Controlador de usuários
+│   │   ├── PostController.java # Controlador de posts
+│   │   └── FriendController.java # Controlador de amizades
 │   ├── model/
 │   │   ├── User.java          # Modelo de usuário
+│   │   ├── Post.java          # Modelo de post
 │   │   └── Privacy.java       # Enum de privacidade
 │   └── view/
-│       ├── UserWebView.java   # Geração de HTML
-│       └── Menu.java          # Menu interativo
+│       ├── SocialAppSwing.java # Interface gráfica Swing
+│       └── Menu.java          # Menu interativo console
 ├── bin/                       # Arquivos compilados
+├── Makefile                   # Script de compilação
 └── README.md                  # Este arquivo
 ```
 
@@ -25,40 +36,48 @@ projeto-oo/
 ### 1. Compilar o Projeto
 
 ```bash
-# Compilar todas as classes
-javac -cp bin -d bin src\Main.java
+# Usando Makefile (Windows)
+make compile
 
-# Ou compilar arquivo por arquivo (se necessário)
-javac -d bin src\model\Privacy.java
-javac -d bin src\model\User.java
-javac -d bin src\controller\UserController.java
-javac -d bin src\view\UserWebView.java
-javac -d bin src\view\Menu.java
-javac -cp bin -d bin src\Main.java
+# Ou compilar manualmente
+javac -d bin src/model/Privacy.java
+javac -d bin src/model/User.java
+javac -d bin src/model/Post.java
+javac -d bin src/controller/UserController.java
+javac -d bin src/controller/PostController.java
+javac -d bin src/controller/FriendController.java
+javac -d bin src/view/Menu.java
+javac -d bin src/view/SocialAppSwing.java
+javac -cp bin -d bin src/Main.java
 ```
 
 ### 2. Executar o Sistema
 
 ```bash
+# Interface gráfica (padrão)
 java -cp bin Main
+
+# Interface console
+java -cp bin Main --console
 ```
 
 ## 🎯 Funcionalidades
 
-### Menu de Acesso
-- **1. Criar novo usuário**: Cadastra um novo usuário no sistema
-- **2. Entrar com usuário existente**: Faz login com email e senha
-- **0. Sair**: Encerra o sistema
+### Interface Gráfica (Swing)
+- **🔐 Login**: Sistema de autenticação
+- **👥 Usuários**: Gerenciamento de usuários
+- **📰 Posts**: Criação e visualização de posts
+- **🤝 Amizades**: Sistema de amizades
 
-### Menu Principal (após login)
-- **1. Criar novo usuário**: Adiciona outro usuário
-- **2. Listar todos os usuários**: Mostra todos os usuários cadastrados
-- **3. Editar usuário**: Modifica dados de um usuário existente
-- **4. Excluir usuário**: Remove um usuário do sistema
-- **5. Buscar usuário**: Procura usuários por nome ou email
-- **6. Gerar arquivos HTML**: Cria arquivos HTML para visualização web
-- **7. Informações do sistema**: Mostra estatísticas e informações
-- **8. Trocar usuário**: Faz logout e retorna ao menu de acesso
+### Interface Console
+- **1. Criar novo usuário**: Cadastra um novo usuário
+- **2. Entrar com usuário existente**: Login com email e senha
+- **3. Listar todos os usuários**: Mostra usuários cadastrados
+- **4. Editar usuário**: Modifica dados de usuário
+- **5. Excluir usuário**: Remove usuário do sistema
+- **6. Buscar usuário**: Procura por nome ou email
+- **7. Informações do sistema**: Estatísticas
+- **8. Trocar usuário**: Logout
 - **0. Sair**: Encerra o sistema
 
 ## 🔐 Sistema de Login
@@ -76,21 +95,16 @@ O sistema é inicializado com os seguintes usuários:
 2. **Maria Santos** - maria@email.com - 654321 - Privado  
 3. **Pedro Costa** - pedro@email.com - abcdef - Público
 
-## 🌐 Geração de HTML
-
-A opção 6 gera três arquivos HTML:
-- `formulario.html`: Formulário para cadastro de usuários
-- `lista_usuarios.html`: Lista de todos os usuários
-- `sucesso.html`: Mensagem de confirmação
-
 ## 🎨 Características
 
+- **Interface dupla**: Swing (GUI) + Console
 - **Interface amigável** com emojis e formatação
 - **Validação de entrada** para números e dados
 - **Sistema de sessão** com usuário logado
 - **CRUD completo** para gerenciamento de usuários
 - **Arquitetura MVC** bem estruturada
 - **Tratamento de erros** robusto
+- **Sistema de posts** e amizades
 
 ## 💻 Requisitos
 
@@ -102,10 +116,10 @@ A opção 6 gera três arquivos HTML:
 Este projeto demonstra:
 - Padrão MVC (Model-View-Controller)
 - Programação orientada a objetos
-- Interface de usuário no console
+- Interface de usuário (Swing + Console)
 - Gerenciamento de dados em memória
-- Geração de conteúdo HTML
 - Sistema de autenticação simples
+- Sistema de rede social básico
 
 ## 📝 Notas
 
@@ -113,4 +127,4 @@ Este projeto demonstra:
 - O sistema usa UUIDs para identificação única dos usuários
 - A privacidade pode ser PÚBLICA ou PRIVADA
 - Todos os campos são obrigatórios ao criar usuários
-
+- Suporte a posts e sistema de amizades
