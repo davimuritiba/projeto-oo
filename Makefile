@@ -28,7 +28,7 @@ clean:
 
 # Executar testes (se existirem)
 test: compile
-	@echo 🧪 Executando testes...
+	@echo 🧪 Nenhum teste configurado
 
 # Ajuda
 help:

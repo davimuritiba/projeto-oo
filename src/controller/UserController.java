@@ -50,4 +50,13 @@ public class UserController
     public List<User> getAllUsers() {
         return new ArrayList<>(users);
     }
+    
+    public User getUserById(UUID id) {
+        for (User user : users) {
+            if (user.getId().equals(id)) {
+                return user;
+            }
+        }
+        return null;
+    }
 }

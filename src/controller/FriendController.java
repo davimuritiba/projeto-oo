@@ -6,63 +6,77 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Collections;
+import java.util.List;
+import model.FriendRequest;
 
-public class FriendController 
-    {
-        private final Map<UUID, Set<UUID>> friendsByUser;
-        private final Map<UUID, Set<UUID>> pendingByRecipient;
-        private final Map<UUID, Set<UUID>> pendingBySender;
+public class FriendController {
+    private final Map<UUID, Set<UUID>> friendsByUser;
+    private FriendRequestController friendRequestController;
+    
+    public FriendController(FriendRequestController friendRequestController) {
+        this.friendsByUser = new HashMap<>();
+        this.friendRequestController = friendRequestController;
+    }
+    
+    public FriendController() {
+        this.friendsByUser = new HashMap<>();
 
-        public FriendController()
-            {
-                this.friendsByUser = new HashMap<>();
-                this.pendingByRecipient = new HashMap<>();
-                this.pendingBySender = new HashMap<>();
-            }
+    }
 
         private Set<UUID> ensure(Map<UUID, Set<UUID>> map, UUID key)
             {
                 return map.computeIfAbsent(key, k -> new HashSet<UUID>());
             }
 
-        public boolean sendFriendRequest(UUID fromUserId, UUID toUserId)
-            {
-                if (fromUserId == null || toUserId == null) return false;
-                if (fromUserId.equals(toUserId)) return false;
-                if (areFriends(fromUserId, toUserId)) return false;
+        public boolean sendFriendRequest(UUID fromUserId, UUID toUserId) {
+            if (fromUserId == null || toUserId == null) return false;
+            if (fromUserId.equals(toUserId)) return false;
+            if (areFriends(fromUserId, toUserId)) return false;
 
-                Set<UUID> sent = ensure(pendingBySender, fromUserId);
-                Set<UUID> received = ensure(pendingByRecipient, toUserId);
-
-                if (sent.contains(toUserId) || received.contains(fromUserId)) return false;
-
-                sent.add(toUserId);
-                received.add(fromUserId);
-                return true;
+            if (friendRequestController != null) {
+                return friendRequestController.sendFriendRequest(fromUserId, toUserId);
             }
 
-        public boolean acceptRequest(UUID recipientId, UUID requesterId)
-            {
-                if (recipientId == null || requesterId == null) return false;
-                Set<UUID> recPend = ensure(pendingByRecipient, recipientId);
-                Set<UUID> reqSent = ensure(pendingBySender, requesterId);
-                if (!recPend.remove(requesterId)) return false;
-                reqSent.remove(recipientId);
+            return false;
+        }
 
-                ensure(friendsByUser, recipientId).add(requesterId);
-                ensure(friendsByUser, requesterId).add(recipientId);
-                return true;
+        public boolean acceptRequest(UUID recipientId, UUID requesterId) {
+            if (recipientId == null || requesterId == null) return false;
+
+            if (friendRequestController != null) {
+
+                List<FriendRequest> pendingRequests = friendRequestController.getPendingRequestsReceived(recipientId);
+                for (FriendRequest request : pendingRequests) {
+                    if (request.getSenderId().equals(requesterId)) {
+                        if (friendRequestController.acceptRequest(request.getId())) {
+                            ensure(friendsByUser, recipientId).add(requesterId);
+                            ensure(friendsByUser, requesterId).add(recipientId);
+                            return true;
+                        }
+                    }
+                }
+                return false;
             }
 
-        public boolean declineRequest(UUID recipientId, UUID requesterId)
-            {
-                if (recipientId == null || requesterId == null) return false;
-                Set<UUID> recPend = ensure(pendingByRecipient, recipientId);
-                Set<UUID> reqSent = ensure(pendingBySender, requesterId);
-                boolean removed = recPend.remove(requesterId);
-                reqSent.remove(recipientId);
-                return removed;
+            return false;
+        }
+
+        public boolean declineRequest(UUID recipientId, UUID requesterId) {
+            if (recipientId == null || requesterId == null) return false;
+
+            if (friendRequestController != null) {
+
+                List<FriendRequest> pendingRequests = friendRequestController.getPendingRequestsReceived(recipientId);
+                for (FriendRequest request : pendingRequests) {
+                    if (request.getSenderId().equals(requesterId)) {
+                        return friendRequestController.rejectRequest(request.getId());
+                    }
+                }
+                return false;
             }
+
+            return false;
+        }
 
         public boolean removeFriend(UUID userId, UUID friendId)
             {
@@ -82,15 +96,31 @@ public class FriendController
                 return Collections.unmodifiableSet(ensure(friendsByUser, userId));
             }
 
-        public Set<UUID> getPendingReceived(UUID recipientId)
-            {
-                return Collections.unmodifiableSet(ensure(pendingByRecipient, recipientId));
+        public Set<UUID> getPendingReceived(UUID recipientId) {
+            if (friendRequestController != null) {
+                List<FriendRequest> pendingRequests = friendRequestController.getPendingRequestsReceived(recipientId);
+                Set<UUID> senderIds = new HashSet<>();
+                for (FriendRequest request : pendingRequests) {
+                    senderIds.add(request.getSenderId());
+                }
+                return Collections.unmodifiableSet(senderIds);
             }
+            return Collections.emptySet();
+        }
 
-        public Set<UUID> getPendingSent(UUID senderId)
-            {
-                return Collections.unmodifiableSet(ensure(pendingBySender, senderId));
+        public Set<UUID> getPendingSent(UUID senderId) {
+            if (friendRequestController != null) {
+                List<FriendRequest> sentRequests = friendRequestController.getRequestsSent(senderId);
+                Set<UUID> receiverIds = new HashSet<>();
+                for (FriendRequest request : sentRequests) {
+                    if (request.getStatus() == FriendRequest.RequestStatus.PENDING) {
+                        receiverIds.add(request.getReceiverId());
+                    }
+                }
+                return Collections.unmodifiableSet(receiverIds);
             }
+            return Collections.emptySet();
+        }
     }
 
 
